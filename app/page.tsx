@@ -8,29 +8,21 @@ import Footer from '@/components/Footer'
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [buttonColor, setButtonColor] = useState<'black' | 'blue'>('black')
-  const [showSectionButton, setShowSectionButton] = useState(false)
-  const [showFixedButton, setShowFixedButton] = useState(false)
+  const [showButton, setShowButton] = useState(true)
   const footerRef = useRef<HTMLElement>(null)
   const mainRef = useRef<HTMLElement>(null)
   const titleRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!footerRef.current || !mainRef.current || !titleRef.current) return
+      if (!footerRef.current || !mainRef.current) return
 
       const footerTop = footerRef.current.offsetTop
-      const scrollPosition = window.scrollY + window.innerHeight
-      const titleTop = titleRef.current.offsetTop
-      const titleBottom = titleRef.current.offsetTop + titleRef.current.offsetHeight
-      const viewportTop = window.scrollY
       const viewportBottom = window.scrollY + window.innerHeight
 
-      // 타이틀 섹션이 뷰포트 내에 있는지 확인
-      const isTitleInViewport = viewportTop < titleBottom && viewportBottom > titleTop
-
-      // 섹션 내에 있으면 섹션 버튼 표시, 벗어나면 고정 버튼 표시 (항상 표시)
-      setShowSectionButton(isTitleInViewport)
-      setShowFixedButton(!isTitleInViewport)
+      // 푸터가 뷰포트에 들어오면 버튼 숨기기
+      const isFooterVisible = viewportBottom >= footerTop - 100 // 푸터가 100px 전에 도달하면 숨김
+      setShowButton(!isFooterVisible)
 
       // 메인 영역의 중간 지점을 기준으로 색상 변경
       const mainMiddle = mainRef.current.offsetTop + mainRef.current.offsetHeight / 2
@@ -89,43 +81,49 @@ export default function Home() {
       <Footer ref={footerRef} />
 
       {/* 고정 버튼 - 항상 따라다님 (데스크톱) */}
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="hidden md:block fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 text-white text-center font-bold shadow-lg hover:shadow-xl"
-        style={{
-          width: '780px',
-          height: '150px',
-          borderRadius: '20px',
-          backgroundColor: '#000',
-          fontSize: '48px',
-          fontFamily: 'Pretendard, sans-serif',
-          fontWeight: 700,
-          lineHeight: 'normal',
-          animation: 'blinkBg 0.8s infinite',
-        }}
-      >
-        신청하기 →
-      </button>
+      {showButton && (
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="hidden md:block fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
+          style={{
+            width: '780px',
+            height: '150px',
+            borderRadius: '20px',
+            backgroundColor: '#000',
+            fontSize: '48px',
+            fontFamily: 'Pretendard, sans-serif',
+            fontWeight: 700,
+            lineHeight: 'normal',
+            animation: 'blinkBg 0.8s infinite',
+            opacity: showButton ? 1 : 0,
+          }}
+        >
+          신청하기 →
+        </button>
+      )}
 
       {/* 고정 버튼 - 항상 따라다님 (모바일) */}
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="md:hidden fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 text-white text-center font-bold shadow-lg hover:shadow-xl"
-        style={{
-          width: '90%',
-          maxWidth: '400px',
-          height: '80px',
-          borderRadius: '20px',
-          backgroundColor: '#000',
-          fontSize: '28px',
-          fontFamily: 'Pretendard, sans-serif',
-          fontWeight: 700,
-          lineHeight: 'normal',
-          animation: 'blinkBg 0.8s infinite',
-        }}
-      >
-        신청하기 →
-      </button>
+      {showButton && (
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="md:hidden fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
+          style={{
+            width: '90%',
+            maxWidth: '400px',
+            height: '80px',
+            borderRadius: '20px',
+            backgroundColor: '#000',
+            fontSize: '28px',
+            fontFamily: 'Pretendard, sans-serif',
+            fontWeight: 700,
+            lineHeight: 'normal',
+            animation: 'blinkBg 0.8s infinite',
+            opacity: showButton ? 1 : 0,
+          }}
+        >
+          신청하기 →
+        </button>
+      )}
 
       {/* 상담 신청 모달 */}
       <ConsultationModal
