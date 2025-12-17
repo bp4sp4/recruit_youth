@@ -344,20 +344,11 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-[400px] max-w-[90vw] mx-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
             <div className="p-8 flex flex-col items-center space-y-6">
-              <video
-                autoPlay
-                playsInline
-                muted
-                loop={false}
+              <img 
+                src="/check.gif" 
+                alt="완료" 
                 className="w-24 h-24"
-                onEnded={(e) => {
-                  // 재생 완료 후 정지
-                  const video = e.target as HTMLVideoElement
-                  video.pause()
-                }}
-              >
-                <source src="/check.mp4" type="video/mp4" />
-              </video>
+              />
               <div className="text-center space-y-2">
                 <h3 className="text-xl font-bold text-gray-900">지원이 완료되었습니다</h3>
                 <p className="text-sm text-gray-600">담당자가 빠른시일내에 연락 드리겠습니다</p>

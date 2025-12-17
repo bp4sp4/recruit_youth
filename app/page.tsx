@@ -43,10 +43,10 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       {/* 헤더 */}
       <header className="sticky top-0 bg-white border-b border-gray-200 z-30">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center" style={{ maxWidth: '1000px' }}>
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center" style={{ maxWidth: '1000px',  }}>
           <div className="flex items-center">
             <Image
-              src="/logo2.png"
+              src="/logo2.png"  
               alt="Eduvisors Logo"
               width={200}
               height={30}
@@ -64,7 +64,7 @@ export default function Home() {
 
       {/* 메인 콘텐츠 영역 */}
       <main ref={mainRef} className="flex flex-col items-center justify-center">
-        <div className="text-center space-y-8 w-full" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <div className="text-center space-y-8 w-full bg-gray-100" style={{ maxWidth: '1000px', margin: '0 auto' }}>
           {/* 채용공고 이미지 */}
           <div className=" flex justify-center">
             <img
@@ -73,6 +73,47 @@ export default function Home() {
               className="max-w-full h-auto  object-cover"
               style={{ maxWidth: '1000px', width: '100%' }}
             />
+          </div>
+
+          {/* 이미지 아래 버튼 (데스크톱) */}
+          <div className="hidden md:flex justify-center mt-8">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
+              style={{
+                width: '780px',
+                height: '150px',
+                borderRadius: '20px',
+                backgroundColor: '#000',
+                fontSize: '48px',
+                fontFamily: 'Pretendard, sans-serif',
+                fontWeight: 700,
+                lineHeight: 'normal',
+              }}
+            >
+              면접 지원하기 &gt;
+            </button>
+          </div>
+
+          {/* 이미지 아래 버튼 (모바일) */}
+          <div className="md:hidden flex justify-center my-8 px-4">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
+              style={{
+                width: '90%',
+                maxWidth: '400px',
+                height: '80px',
+                borderRadius: '20px',
+                backgroundColor: '#000',
+                fontSize: '28px',
+                fontFamily: 'Pretendard, sans-serif',
+                fontWeight: 700,
+                lineHeight: 'normal',
+              }}
+            >
+              면접 지원하기 &gt;
+            </button>
           </div>
         </div>
       </main>
@@ -94,7 +135,6 @@ export default function Home() {
             fontFamily: 'Pretendard, sans-serif',
             fontWeight: 700,
             lineHeight: 'normal',
-            animation: 'blinkBg 0.8s infinite',
             opacity: showButton ? 1 : 0,
           }}
         >
@@ -117,7 +157,6 @@ export default function Home() {
             fontFamily: 'Pretendard, sans-serif',
             fontWeight: 700,
             lineHeight: 'normal',
-            animation: 'blinkBg 0.8s infinite',
             opacity: showButton ? 1 : 0,
           }}
         >
