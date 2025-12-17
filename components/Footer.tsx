@@ -6,7 +6,7 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
       <div className="container mx-auto px-4" style={{ maxWidth: '1000px' }}>
         <div className="text-left space-y-4">
           <div>
-            <h3 className="text-xl font-bold mb-2 text-gray-800">(주)한평생교육그룹</h3>
+            <h3 className="text-xl font-bold mb-2 text-gray-800">(주)한평생에듀바이저스</h3>
             <p className="text-sm text-gray-600">
               서울시 도봉구 창동 마들로13길 61 씨드큐브 905호
             </p>
@@ -18,7 +18,7 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
           </div>
           <div className="pt-4 border-t border-gray-300">
             <p className="text-sm text-gray-600">
-              ©(주)한평생교육그룹 All Rights Reserved.
+              ©(주)한평생에듀바이저스 All Rights Reserved.
             </p>
           </div>
         </div>
