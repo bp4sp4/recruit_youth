@@ -74,7 +74,7 @@ export default function Home() {
       <main ref={mainRef} className="flex flex-col items-center justify-center">
         <div className="text-center space-y-8 w-full" style={{ maxWidth: '1000px', margin: '0 auto' }}>
           {/* 채용공고 이미지 */}
-          <div className="mb-12 flex justify-center">
+          <div className=" flex justify-center">
             <img
               src="/main__desktop.png"
               alt="강남지점 채용공고"
