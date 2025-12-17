@@ -347,7 +347,7 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
               <img 
                 src="/check.gif" 
                 alt="완료" 
-                className="w-24 h-24 object-cover"
+                className="w-24 h-auto object-cover"
               />
               <div className="text-center space-y-2">
                 <h3 className="text-xl font-bold text-gray-900">지원이 완료되었습니다</h3>
