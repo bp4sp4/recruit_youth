@@ -98,7 +98,7 @@ export default function Home() {
             opacity: showButton ? 1 : 0,
           }}
         >
-          신청하기 →
+          면접 지원하기 &gt;
         </button>
       )}
 
@@ -121,7 +121,7 @@ export default function Home() {
             opacity: showButton ? 1 : 0,
           }}
         >
-          신청하기 →
+          면접 지원하기 &gt;
         </button>
       )}
 
