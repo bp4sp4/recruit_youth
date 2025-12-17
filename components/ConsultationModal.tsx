@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ConsultationApplication } from '@/lib/types/database'
 
@@ -114,9 +114,6 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
       if (insertError) throw insertError
 
       setSuccess(true)
-      setTimeout(() => {
-        onClose()
-      }, 2000)
     } catch (err: any) {
       setError(err.message || '신청에 실패했습니다. 다시 시도해주세요.')
     } finally {
@@ -336,11 +333,48 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
             disabled={loading || success || !formData.name.trim() || !formData.contact.trim() || !formData.region || !formData.privacy_consent || !!contactError}
             className="w-full py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-sm md:text-base text-white font-semibold rounded-2xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
           >
-            {loading ? '신청 중...' : success ? '신청 완료!' : '신청 완료'}
+            {loading ? '신청 중...' : success ? '지원 완료!' : '지원하기'}
           </button>
           
         </form>
       </div>
+
+      {/* 지원 완료 팝업 */}
+      {success && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-[400px] max-w-[90vw] mx-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+            <div className="p-8 flex flex-col items-center space-y-6">
+              <video
+                autoPlay
+                playsInline
+                muted
+                loop={false}
+                className="w-24 h-24"
+                onEnded={(e) => {
+                  // 재생 완료 후 정지
+                  const video = e.target as HTMLVideoElement
+                  video.pause()
+                }}
+              >
+                <source src="/check.mp4" type="video/mp4" />
+              </video>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold text-gray-900">지원이 완료되었습니다</h3>
+                <p className="text-sm text-gray-600">담당자가 빠른시일내에 연락 드리겠습니다</p>
+              </div>
+              <button
+                onClick={() => {
+                  setSuccess(false)
+                  onClose()
+                }}
+                className="w-full py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-sm md:text-base text-white font-semibold rounded-2xl transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 개인정보 수집 및 이용 동의 상세 팝업 */}
       {showPrivacyDetail && (
