@@ -225,7 +225,7 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
                     e.target.style.borderColor = '#e5e7eb'
                   }
                 }}
-                placeholder="010-1234-5678"
+                placeholder="01012345678"
               />
             </div>
             {contactError && (
