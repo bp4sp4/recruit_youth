@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/open.graph.png",
-        width: 1200,
-        height: 630,
+        width: 200,
+        height: 30,
         alt: "한평생 에듀바이저스",
       },
     ],
