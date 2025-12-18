@@ -123,41 +123,79 @@ export default function AdminDashboardClient() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">이름</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">연락처</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">지역</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">유입 경로</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">개인정보수집 동의</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">신청일시</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">관리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-500/20">
-                  {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-blue-500/10 transition-colors">
-                      <td className="px-6 py-4 text-sm text-white font-medium">{app.name}</td>
-                      <td className="px-6 py-4 text-sm text-white">{app.contact}</td>
-                      <td className="px-6 py-4 text-sm text-white">{app.region}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <span
-                          className={`px-2 py-1 rounded ${
-                            app.privacy_consent
-                              ? 'bg-green-500/20 text-green-300'
-                              : 'bg-red-500/20 text-red-300'
-                          }`}
-                        >
-                          {app.privacy_consent ? '동의' : '비동의'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-blue-200">
-                        {app.created_at ? formatDate(app.created_at) : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <button
-                          onClick={() => handleDelete(app.id!, app.name)}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                        >
-                          삭제
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {applications.map((app) => {
+                    // 유입 경로 표시 로직
+                    const getSourceDisplay = () => {
+                      if (app.source) {
+                        return app.source
+                      }
+                      if (app.utm_source) {
+                        return app.utm_source
+                      }
+                      if (app.referrer_url && app.referrer_url !== 'direct') {
+                        try {
+                          const url = new URL(app.referrer_url)
+                          return url.hostname.replace('www.', '')
+                        } catch {
+                          return app.referrer_url
+                        }
+                      }
+                      return '직접 접근'
+                    }
+
+                    const sourceDisplay = getSourceDisplay()
+                    const getSourceBadgeColor = (source: string) => {
+                      if (source.includes('네이버')) return 'bg-blue-500/20 text-blue-300'
+                      if (source.includes('당근')) return 'bg-orange-500/20 text-orange-300'
+                      if (source.includes('인스타')) return 'bg-pink-500/20 text-pink-300'
+                      if (source === '직접 접근') return 'bg-gray-500/20 text-gray-300'
+                      return 'bg-purple-500/20 text-purple-300'
+                    }
+
+                    return (
+                      <tr key={app.id} className="hover:bg-blue-500/10 transition-colors">
+                        <td className="px-6 py-4 text-sm text-white font-medium">{app.name}</td>
+                        <td className="px-6 py-4 text-sm text-white">{app.contact}</td>
+                        <td className="px-6 py-4 text-sm text-white">{app.region}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${getSourceBadgeColor(sourceDisplay)}`}
+                          >
+                            {sourceDisplay}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              app.privacy_consent
+                                ? 'bg-green-500/20 text-green-300'
+                                : 'bg-red-500/20 text-red-300'
+                            }`}
+                          >
+                            {app.privacy_consent ? '동의' : '비동의'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-blue-200">
+                          {app.created_at ? formatDate(app.created_at) : '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <button
+                            onClick={() => handleDelete(app.id!, app.name)}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                          >
+                            삭제
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
