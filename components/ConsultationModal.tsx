@@ -22,7 +22,60 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
   const [contactError, setContactError] = useState('')
   const [success, setSuccess] = useState(false)
   const [showPrivacyDetail, setShowPrivacyDetail] = useState(false)
+  const [referrerData, setReferrerData] = useState<{
+    referrer_url?: string
+    utm_source?: string
+    utm_medium?: string
+    utm_campaign?: string
+    source?: string
+  }>({})
   const supabase = createClient()
+
+  // 리퍼러 정보 수집 및 소스 자동 분류
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const referrer = document.referrer || ''
+      const utmSource = params.get('utm_source') || ''
+      
+      // 소스 자동 분류
+      let source = 'direct'
+      const referrerLower = referrer.toLowerCase()
+      
+      if (utmSource) {
+        // UTM 파라미터가 있으면 우선적으로 사용 (광고/캠페인 추적)
+        if (utmSource.includes('naver') || utmSource.includes('네이버')) {
+          source = '네이버 파워링크'
+        } else if (utmSource.includes('daangn') || utmSource.includes('당근')) {
+          source = '당근'
+        } else if (utmSource.includes('instagram') || utmSource.includes('인스타')) {
+          source = '인스타'
+        } else {
+          source = utmSource
+        }
+      } else if (referrer) {
+        // 리퍼러 URL로 분류 (UTM 파라미터가 없을 때만)
+        // 네이버 파워링크는 UTM 파라미터로만 구분 가능하므로, 리퍼러만으로는 일반 검색으로 분류
+        if (referrerLower.includes('naver.com') || referrerLower.includes('search.naver')) {
+          source = '네이버 검색' // 일반 네이버 검색
+        } else if (referrerLower.includes('daangn.com') || referrerLower.includes('당근')) {
+          source = '당근'
+        } else if (referrerLower.includes('instagram.com') || referrerLower.includes('instagr.am')) {
+          source = '인스타'
+        } else {
+          source = '기타'
+        }
+      }
+      
+      setReferrerData({
+        referrer_url: referrer || 'direct',
+        utm_source: params.get('utm_source') || undefined,
+        utm_medium: params.get('utm_medium') || undefined,
+        utm_campaign: params.get('utm_campaign') || undefined,
+        source: source,
+      })
+    }
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -109,7 +162,11 @@ export default function ConsultationModal({ isOpen, onClose }: ConsultationModal
 
       const { error: insertError } = await supabase
         .from('consultation_applications')
-        .insert([{ ...formData, region: formData.region as '서울' | '경기인천' | '그 외지역' }])
+        .insert([{ 
+          ...formData, 
+          region: formData.region as '서울' | '경기인천' | '그 외지역',
+          ...referrerData
+        }])
 
       if (insertError) throw insertError
 
