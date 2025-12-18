@@ -2,27 +2,32 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import ConsultationModal from '@/components/ConsultationModal'
+import ConsultationForm from '@/components/ConsultationForm'
 import Footer from '@/components/Footer'
 
 export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [buttonColor, setButtonColor] = useState<'black' | 'blue'>('black')
   const [showButton, setShowButton] = useState(true)
   const footerRef = useRef<HTMLElement>(null)
   const mainRef = useRef<HTMLElement>(null)
-  const titleRef = useRef<HTMLElement>(null)
+  const formSectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!footerRef.current || !mainRef.current) return
+      if (!footerRef.current || !mainRef.current || !formSectionRef.current) return
 
       const footerTop = footerRef.current.offsetTop
+      const formTop = formSectionRef.current.offsetTop
       const viewportBottom = window.scrollY + window.innerHeight
 
+      // 폼 섹션에 도달하면 버튼 숨기기
+      const isFormVisible = viewportBottom >= formTop - 100
+      
       // 푸터가 뷰포트에 들어오면 버튼 숨기기
-      const isFooterVisible = viewportBottom >= footerTop - 100 // 푸터가 100px 전에 도달하면 숨김
-      setShowButton(!isFooterVisible)
+      const isFooterVisible = viewportBottom >= footerTop - 100
+      
+      // 폼이나 푸터에 도달하면 버튼 숨기기
+      setShowButton(!isFormVisible && !isFooterVisible)
 
       // 메인 영역의 중간 지점을 기준으로 색상 변경
       const mainMiddle = mainRef.current.offsetTop + mainRef.current.offsetHeight / 2
@@ -75,56 +80,49 @@ export default function Home() {
             />
           </div>
 
-          {/* 이미지 아래 버튼 (데스크톱) */}
-          <div className="hidden md:flex justify-center mt-8">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
-              style={{
-                width: '780px',
-                height: '150px',
-                borderRadius: '20px',
-                backgroundColor: '#000',
-                fontSize: '48px',
-                fontFamily: 'Pretendard, sans-serif',
-                fontWeight: 700,
-                lineHeight: 'normal',
-              }}
-            >
-              면접 지원하기 &gt;
-            </button>
-          </div>
-
-          {/* 이미지 아래 버튼 (모바일) */}
-          <div className="md:hidden flex justify-center my-8 px-4">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
-              style={{
-                width: '90%',
-                maxWidth: '400px',
-                height: '80px',
-                borderRadius: '20px',
-                backgroundColor: '#000',
-                fontSize: '28px',
-                fontFamily: 'Pretendard, sans-serif',
-                fontWeight: 700,
-                lineHeight: 'normal',
-              }}
-            >
-              면접 지원하기 &gt;
-            </button>
-          </div>
         </div>
       </main>
+
+      {/* 폼 섹션 - 항상 표시 */}
+      <section 
+        ref={formSectionRef}
+        className="w-full bg-white py-12 md:py-[120px]"
+        style={{ maxWidth: '1000px', margin: '0 auto' }}
+      >
+        <div className="container mx-auto px-4 md:px-8">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-[120px] items-start">
+            {/* 왼쪽: 메시지 영역 */}
+            <div className=" text-center md:text-left">
+              <p className="text-[17px] text-[#4e5968] md:text-[20px] font-medium">
+              적성에 맞을지 고민되시나요?
+              </p>
+              <div className="h-[8px] md:h-[8px]"></div>
+              <p className="text-[#333d4b] text-[24px] md:text-[34px] text-gray-600 font-bold">
+              이야기 나눠보고 선택해보세요.
+              </p>
+              <div className="h-[8px] md:h-[24px]"></div>
+              <p className="text-[17px] text-[#4e5968] md:text-[20px] font-medium">
+              <span className="text-[#2b7fff]">1일 안</span>에 연락드릴게요.
+              </p>
+            </div>
+
+            {/* 오른쪽: 폼 */}
+            <div>
+              <ConsultationForm />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 푸터 */}
       <Footer ref={footerRef} />
 
-      {/* 고정 버튼 - 항상 따라다님 (데스크톱) */}
+      {/* 고정 버튼 - 폼 섹션에 도달하기 전까지만 표시 (데스크톱) */}
       {showButton && (
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            formSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
+          }}
           className="hidden md:block fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
           style={{
             width: '780px',
@@ -142,10 +140,12 @@ export default function Home() {
         </button>
       )}
 
-      {/* 고정 버튼 - 항상 따라다님 (모바일) */}
+      {/* 고정 버튼 - 폼 섹션에 도달하기 전까지만 표시 (모바일) */}
       {showButton && (
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            formSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
+          }}
           className="md:hidden fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 text-white text-center font-bold shadow-lg hover:shadow-xl transition-opacity duration-300"
           style={{
             width: '90%',
@@ -163,12 +163,6 @@ export default function Home() {
           면접 지원하기 &gt;
         </button>
       )}
-
-      {/* 상담 신청 모달 */}
-      <ConsultationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
   )
 }
