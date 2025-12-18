@@ -20,9 +20,9 @@ export const metadata: Metadata = {
     description: "에듀바이저스 - 채용 반창고",
     images: [
       {
-        url: "/open.graph.png",
-        width: 200,
-        height: 30,
+        url: "/graph_img.png",
+        width: 1200,
+        height: 630,
         alt: "한평생 에듀바이저스",
       },
     ],
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "에듀바이저스 - 채용 반창고",
     description: "에듀바이저스 - 채용 반창고",
-    images: ["/open.graph.png"],
+    images: ["/graph_img.png"],
   },
 };
 
