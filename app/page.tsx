@@ -52,11 +52,12 @@ export default function Home() {
           <div className="flex items-center">
             <Image
               src="/logo2.png"  
-              alt="Eduvisors Logo"
+              alt="logo"
               width={200}
               height={30}
               className="h-auto w-auto max-h-5 md:max-h-8"
               priority
+              unoptimized
             />
           </div>
           {/* <nav className="hidden md:flex gap-6">

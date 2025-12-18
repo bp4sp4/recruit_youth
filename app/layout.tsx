@@ -15,6 +15,25 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "에듀바이저스 - 채용 반창고",
   description: "에듀바이저스 - 채용 반창고",
+  openGraph: {
+    title: "에듀바이저스 - 채용 반창고",
+    description: "에듀바이저스 - 채용 반창고",
+    images: [
+      {
+        url: "/open.graph.png",
+        width: 1200,
+        height: 630,
+        alt: "한평생 에듀바이저스",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "에듀바이저스 - 채용 반창고",
+    description: "에듀바이저스 - 채용 반창고",
+    images: ["/open.graph.png"],
+  },
 };
 
 export default function RootLayout({
