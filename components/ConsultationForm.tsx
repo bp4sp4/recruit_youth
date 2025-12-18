@@ -42,7 +42,7 @@ export default function ConsultationForm() {
           source = '네이버 파워링크'
         } else if (utmSource.includes('daangn') || utmSource.includes('당근')) {
           source = '당근'
-        } else if (utmSource.includes('instagram') || utmSource.includes('인스타')) {
+        } else if (utmSource.includes('insta') || utmSource.includes('instagram') || utmSource.includes('인스타')) {
           source = '인스타'
         } else {
           source = utmSource

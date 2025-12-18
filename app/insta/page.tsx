@@ -3,12 +3,12 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export default function DaangnRedirect() {
+export default function InstagramRedirect() {
   const router = useRouter()
 
   useEffect(() => {
     // UTM 파라미터를 추가하여 메인 페이지로 리다이렉트
-    router.replace('/?utm_source=daangn&utm_medium=social&utm_campaign=recruitment')
+    router.replace('/?utm_source=insta&utm_medium=social&utm_campaign=recruitment')
   }, [router])
 
   return (
@@ -20,5 +20,4 @@ export default function DaangnRedirect() {
     </div>
   )
 }
-
 
