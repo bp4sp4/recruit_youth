@@ -10,6 +10,8 @@ export interface ConsultationApplication {
   utm_medium?: string
   utm_campaign?: string
   source?: string
+  delivered_to?: string
+  delivered_at?: string
   created_at?: string
   updated_at?: string
 }
