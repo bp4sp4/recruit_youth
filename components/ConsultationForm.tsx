@@ -134,6 +134,25 @@ export default function ConsultationForm() {
 
       if (insertError) throw insertError
 
+      // Slack 알림 전송 (실패해도 사용자에게는 에러를 보이지 않음)
+      try {
+        await fetch('/api/slack', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            contact: formData.contact,
+            region: formData.region,
+            source: referrerData.source || '직접 접속',
+          }),
+        })
+      } catch (slackError) {
+        // Slack 알림 실패는 로그만 남기고 사용자에게는 보이지 않음
+        console.error('Slack 알림 전송 실패:', slackError)
+      }
+
       setSuccess(true)
     } catch (err: any) {
       setError(err.message || '신청에 실패했습니다. 다시 시도해주세요.')
