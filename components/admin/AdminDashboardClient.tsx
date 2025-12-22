@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ConsultationApplication } from '@/lib/types/database'
+import * as XLSX from 'xlsx'
 
 export default function AdminDashboardClient() {
   const [applications, setApplications] = useState<ConsultationApplication[]>([])
@@ -53,12 +54,27 @@ export default function AdminDashboardClient() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ko-KR', {
+    const date = new Date(dateString)
+    return date.toLocaleString('ko-KR', {
+      timeZone: 'Asia/Seoul',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+    })
+  }
+
+  const formatDateForExcel = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
     })
   }
 
@@ -155,17 +171,85 @@ ${app.checkbox_selection && app.checkbox_selection.length > 0 ? `선택 항목: 
     copyToClipboard(info, '지원자 정보')
   }
 
+  const handleExportToExcel = () => {
+    // 엑셀 데이터 준비
+    const getSourceDisplay = (app: ConsultationApplication) => {
+      if (app.source) return app.source
+      if (app.utm_source) return app.utm_source
+      if (app.referrer_url && app.referrer_url !== 'direct') {
+        try {
+          const url = new URL(app.referrer_url)
+          return url.hostname.replace('www.', '')
+        } catch {
+          return app.referrer_url
+        }
+      }
+      return '직접 접근'
+    }
+
+    const excelData = applications.map((app) => ({
+      전달상태: app.delivered_at ? '전달완료' : '전달대기',
+      이름: app.name,
+      연락처: app.contact,
+      지역: app.region,
+      유입경로: getSourceDisplay(app),
+      개인정보수집동의: app.privacy_consent ? '동의' : '비동의',
+      선택항목: app.checkbox_selection && app.checkbox_selection.length > 0 
+        ? app.checkbox_selection.join(', ') 
+        : '',
+      신청일시: app.created_at ? formatDateForExcel(app.created_at) : '-',
+      전달일시: app.delivered_at ? formatDateForExcel(app.delivered_at) : '-',
+    }))
+
+    // 워크북 생성
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '상담신청내역')
+
+    // 파일명 생성 (현재 날짜 포함)
+    const now = new Date()
+    const dateStr = now.toLocaleDateString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).replace(/\./g, '').replace(/\s/g, '')
+    
+    const fileName = `상담신청내역_${dateStr}.xlsx`
+
+    // 엑셀 파일 다운로드
+    XLSX.writeFile(wb, fileName)
+    
+    setToastMessage('엑셀 다운로드 완료')
+    setTimeout(() => {
+      setToastMessage('')
+    }, 2000)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-black">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-white">상담 신청 관리</h1>
-          <button
-            onClick={handleLogout}
-            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-          >
-            로그아웃
-          </button>
+          <div className="flex gap-3">
+            {applications.length > 0 && (
+              <button
+                onClick={handleExportToExcel}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                엑셀 다운로드
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              로그아웃
+            </button>
+          </div>
         </div>
 
         {error && (
