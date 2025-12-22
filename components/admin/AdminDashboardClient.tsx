@@ -11,6 +11,9 @@ export default function AdminDashboardClient() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [toastMessage, setToastMessage] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const router = useRouter()
   const supabase = createClient()
 
@@ -39,7 +42,21 @@ export default function AdminDashboardClient() {
 
       if (error) throw error
 
-      setApplications(data || [])
+      // 전달대기 항목이 먼저 오도록 정렬 (전달대기 -> 전달완료)
+      const sortedData = (data || []).sort((a, b) => {
+        const aDelivered = !!a.delivered_at
+        const bDelivered = !!b.delivered_at
+        if (aDelivered === bDelivered) {
+          // 같은 상태면 최신순
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        }
+        // 전달대기(false)가 먼저 오도록
+        return aDelivered ? 1 : -1
+      })
+
+      setApplications(sortedData)
+      setSelectedIds(new Set()) // 선택 초기화
+      setCurrentPage(1) // 첫 페이지로 리셋
     } catch (err: any) {
       setError(err.message || '데이터를 불러오는데 실패했습니다.')
     } finally {
@@ -171,6 +188,107 @@ ${app.checkbox_selection && app.checkbox_selection.length > 0 ? `선택 항목: 
     copyToClipboard(info, '지원자 정보')
   }
 
+  const handleSelectAll = (checked: boolean) => {
+    // 현재 페이지의 항목만 선택/해제
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const currentPageItems = applications.slice(startIndex, endIndex)
+    
+    const newSelected = new Set(selectedIds)
+    if (checked) {
+      currentPageItems.forEach(app => {
+        if (app.id) newSelected.add(app.id)
+      })
+    } else {
+      currentPageItems.forEach(app => {
+        if (app.id) newSelected.delete(app.id)
+      })
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const handleSelectItem = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds)
+    if (checked) {
+      newSelected.add(id)
+    } else {
+      newSelected.delete(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) {
+      setToastMessage('선택된 항목이 없습니다')
+      setTimeout(() => setToastMessage(''), 2000)
+      return
+    }
+
+    if (!confirm(`선택한 ${selectedIds.size}건의 신청 내역을 삭제하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      setError('')
+      const idsArray = Array.from(selectedIds)
+      const { error } = await supabase
+        .from('consultation_applications')
+        .delete()
+        .in('id', idsArray)
+
+      if (error) {
+        console.error('Bulk delete error:', error)
+        throw error
+      }
+
+      await loadApplications()
+      setToastMessage(`${idsArray.length}건 삭제 완료`)
+      setTimeout(() => setToastMessage(''), 2000)
+    } catch (err: any) {
+      console.error('Bulk delete failed:', err)
+      setError(err.message || '일괄 삭제에 실패했습니다.')
+      setToastMessage('일괄 삭제 실패')
+      setTimeout(() => setToastMessage(''), 2000)
+    }
+  }
+
+  const handleBulkDelivery = async () => {
+    if (selectedIds.size === 0) {
+      setToastMessage('선택된 항목이 없습니다')
+      setTimeout(() => setToastMessage(''), 2000)
+      return
+    }
+
+    if (!confirm(`선택한 ${selectedIds.size}건을 전달완료 처리하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      setError('')
+      const idsArray = Array.from(selectedIds)
+      const now = new Date().toISOString()
+      
+      const { error } = await supabase
+        .from('consultation_applications')
+        .update({ delivered_at: now })
+        .in('id', idsArray)
+
+      if (error) {
+        console.error('Bulk delivery error:', error)
+        throw error
+      }
+
+      await loadApplications()
+      setToastMessage(`${idsArray.length}건 전달완료 처리`)
+      setTimeout(() => setToastMessage(''), 2000)
+    } catch (err: any) {
+      console.error('Bulk delivery failed:', err)
+      setError(err.message || '일괄 전달 처리에 실패했습니다.')
+      setToastMessage('일괄 전달 처리 실패')
+      setTimeout(() => setToastMessage(''), 2000)
+    }
+  }
+
   const handleExportToExcel = () => {
     // 엑셀 데이터 준비
     const getSourceDisplay = (app: ConsultationApplication) => {
@@ -215,7 +333,7 @@ ${app.checkbox_selection && app.checkbox_selection.length > 0 ? `선택 항목: 
       day: '2-digit',
     }).replace(/\./g, '').replace(/\s/g, '')
     
-    const fileName = `상담신청내역_${dateStr}.xlsx`
+    const fileName = `청년지원명단_${dateStr}.xlsx`
 
     // 엑셀 파일 다운로드
     XLSX.writeFile(wb, fileName)
@@ -280,10 +398,50 @@ ${app.checkbox_selection && app.checkbox_selection.length > 0 ? `선택 항목: 
           </div>
         ) : (
           <div className="bg-black/40 backdrop-blur-sm rounded-2xl border border-blue-500/30 shadow-2xl overflow-hidden">
+            {/* 일괄 작업 버튼 */}
+            {selectedIds.size > 0 && (
+              <div className="px-6 py-4 bg-blue-700/30 border-b border-blue-500/30 flex items-center justify-between">
+                <span className="text-white font-medium">
+                  {selectedIds.size}개 선택됨
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleBulkDelivery}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
+                  >
+                    일괄전달
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+                  >
+                    일괄삭제
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-blue-600/30">
                   <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">
+                      {(() => {
+                        const startIndex = (currentPage - 1) * itemsPerPage
+                        const endIndex = startIndex + itemsPerPage
+                        const currentPageItems = applications.slice(startIndex, endIndex)
+                        const currentPageIds = currentPageItems.map(app => app.id!).filter(Boolean)
+                        const allCurrentPageSelected = currentPageIds.length > 0 && currentPageIds.every(id => selectedIds.has(id))
+                        
+                        return (
+                          <input
+                            type="checkbox"
+                            checked={allCurrentPageSelected}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
+                            className="w-5 h-5 rounded border-2 border-blue-400 bg-transparent checked:bg-blue-500 checked:border-blue-500 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          />
+                        )
+                      })()}
+                    </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">전달 상태</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">이름</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">연락처</th>
@@ -295,110 +453,158 @@ ${app.checkbox_selection && app.checkbox_selection.length > 0 ? `선택 항목: 
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-500/20">
-                  {applications.map((app) => {
-                    // 유입 경로 표시 로직
-                    const getSourceDisplay = () => {
-                      if (app.source) {
-                        return app.source
-                      }
-                      if (app.utm_source) {
-                        return app.utm_source
-                      }
-                      if (app.referrer_url && app.referrer_url !== 'direct') {
-                        try {
-                          const url = new URL(app.referrer_url)
-                          return url.hostname.replace('www.', '')
-                        } catch {
-                          return app.referrer_url
+                  {(() => {
+                    // 페이징 처리
+                    const startIndex = (currentPage - 1) * itemsPerPage
+                    const endIndex = startIndex + itemsPerPage
+                    const paginatedApplications = applications.slice(startIndex, endIndex)
+
+                    return paginatedApplications.map((app) => {
+                      // 유입 경로 표시 로직
+                      const getSourceDisplay = () => {
+                        if (app.source) {
+                          return app.source
                         }
+                        if (app.utm_source) {
+                          return app.utm_source
+                        }
+                        if (app.referrer_url && app.referrer_url !== 'direct') {
+                          try {
+                            const url = new URL(app.referrer_url)
+                            return url.hostname.replace('www.', '')
+                          } catch {
+                            return app.referrer_url
+                          }
+                        }
+                        return '직접 접근'
                       }
-                      return '직접 접근'
-                    }
 
-                    const sourceDisplay = getSourceDisplay()
-                    const getSourceBadgeColor = (source: string) => {
-                      if (source.includes('네이버')) return 'bg-blue-500/20 text-blue-300'
-                      if (source.includes('당근')) return 'bg-orange-500/20 text-orange-300'
-                      if (source.includes('인스타')) return 'bg-pink-500/20 text-pink-300'
-                      if (source === '직접 접근') return 'bg-gray-500/20 text-gray-300'
-                      return 'bg-purple-500/20 text-purple-300'
-                    }
+                      const sourceDisplay = getSourceDisplay()
+                      const getSourceBadgeColor = (source: string) => {
+                        if (source.includes('네이버')) return 'bg-blue-500/20 text-blue-300'
+                        if (source.includes('당근')) return 'bg-orange-500/20 text-orange-300'
+                        if (source.includes('인스타')) return 'bg-pink-500/20 text-pink-300'
+                        if (source === '직접 접근') return 'bg-gray-500/20 text-gray-300'
+                        return 'bg-purple-500/20 text-purple-300'
+                      }
 
-                    const isDelivered = !!app.delivered_at
+                      const isDelivered = !!app.delivered_at
+                      const isSelected = selectedIds.has(app.id!)
 
-                    return (
-                      <tr 
-                        key={app.id} 
-                        className={`transition-colors ${
-                          isDelivered 
-                            ? 'bg-green-500/20 hover:bg-green-500/25' 
-                            : 'hover:bg-blue-500/10'
-                        }`}
-                      >
-                        <td className="px-6 py-4 text-sm">
-                          <label className="flex items-center gap-2 cursor-pointer">
+                      return (
+                        <tr 
+                          key={app.id} 
+                          className={`transition-colors ${
+                            isDelivered 
+                              ? 'bg-green-500/20 hover:bg-green-500/25' 
+                              : 'hover:bg-blue-500/10'
+                          } ${isSelected ? 'bg-blue-600/30' : ''}`}
+                        >
+                          <td className="px-6 py-4 text-sm">
                             <input
                               type="checkbox"
-                              checked={isDelivered}
-                              onChange={(e) => handleDeliveryToggle(app.id!, e.target.checked)}
-                              className="w-5 h-5 rounded border-2 border-blue-400 bg-transparent checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
+                              checked={isSelected}
+                              onChange={(e) => handleSelectItem(app.id!, e.target.checked)}
+                              className="w-5 h-5 rounded border-2 border-blue-400 bg-transparent checked:bg-blue-500 checked:border-blue-500 focus:ring-2 focus:ring-blue-500 cursor-pointer"
                             />
-                            <span className="text-white text-sm">
-                              {isDelivered ? '전달완료' : '전달대기'}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isDelivered}
+                                onChange={(e) => handleDeliveryToggle(app.id!, e.target.checked)}
+                                className="w-5 h-5 rounded border-2 border-blue-400 bg-transparent checked:bg-green-500 checked:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
+                              />
+                              <span className="text-white text-sm">
+                                {isDelivered ? '전달완료' : '전달대기'}
+                              </span>
+                            </label>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-white font-medium">{app.name}</td>
+                          <td className="px-6 py-4 text-sm text-white">{app.contact}</td>
+                          <td className="px-6 py-4 text-sm text-white">{app.region}</td>
+                          <td className="px-6 py-4 text-sm">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-medium ${getSourceBadgeColor(sourceDisplay)}`}
+                            >
+                              {sourceDisplay}
                             </span>
-                          </label>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-white font-medium">{app.name}</td>
-                        <td className="px-6 py-4 text-sm text-white">{app.contact}</td>
-                        <td className="px-6 py-4 text-sm text-white">{app.region}</td>
-                        <td className="px-6 py-4 text-sm">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${getSourceBadgeColor(sourceDisplay)}`}
-                          >
-                            {sourceDisplay}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <span
-                            className={`px-2 py-1 rounded ${
-                              app.privacy_consent
-                                ? 'bg-green-500/20 text-green-300'
-                                : 'bg-red-500/20 text-red-300'
-                            }`}
-                          >
-                            {app.privacy_consent ? '동의' : '비동의'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-blue-200">
-                          {app.created_at ? formatDate(app.created_at) : '-'}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => copyApplicationInfo(app)}
-                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                              title="지원자 정보 복사"
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <span
+                              className={`px-2 py-1 rounded ${
+                                app.privacy_consent
+                                  ? 'bg-green-500/20 text-green-300'
+                                  : 'bg-red-500/20 text-red-300'
+                              }`}
                             >
-                              복사
-                            </button>
-                            <button
-                              onClick={() => handleDelete(app.id!, app.name)}
-                              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                              {app.privacy_consent ? '동의' : '비동의'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-blue-200">
+                            {app.created_at ? formatDate(app.created_at) : '-'}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={() => copyApplicationInfo(app)}
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                                title="지원자 정보 복사"
+                              >
+                                복사
+                              </button>
+                              <button
+                                onClick={() => handleDelete(app.id!, app.name)}
+                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  })()}
                 </tbody>
               </table>
             </div>
-            <div className="px-6 py-4 bg-blue-600/20 border-t border-blue-500/30">
+            <div className="px-6 py-4 bg-blue-600/20 border-t border-blue-500/30 flex items-center justify-between">
               <p className="text-sm text-blue-200">
                 총 {applications.length}건의 신청이 있습니다.
               </p>
+              {(() => {
+                const totalPages = Math.ceil(applications.length / itemsPerPage)
+                const startIndex = (currentPage - 1) * itemsPerPage
+                const endIndex = Math.min(startIndex + itemsPerPage, applications.length)
+                
+                return (
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-blue-200">
+                      {startIndex + 1}-{endIndex} / {applications.length}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white text-sm rounded transition-colors"
+                      >
+                        이전
+                      </button>
+                      <span className="px-3 py-1 text-sm text-blue-200">
+                        {currentPage} / {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white text-sm rounded transition-colors"
+                      >
+                        다음
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}
